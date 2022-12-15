@@ -1,0 +1,18 @@
+---
+
+galaxy_info:
+  role_name: unifi_camera_logo
+  namespace: cchurch
+  author: Chris Church
+  description: Configure custom logo on Unifi Protect cameras.
+  company: Nine More Minutes, Inc.
+  license: BSD
+  min_ansible_version: "2.8"
+  platforms:
+    - name: GenericLinux
+      versions:
+        - all
+  galaxy_tags:
+    - unifi
+allow_duplicates: true
+dependencies: []

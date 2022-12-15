@@ -1,0 +1,8 @@
+---
+
+unifi_camera_logo_use_custom: true
+unifi_camera_logo_file: unifi_camera_logo.png
+unifi_camera_logo_scale: 50
+
+unifi_camera_logo_dest_path: /etc/persistent/user_logo
+unifi_camera_logo_tmp_path: /tmp/user_logo_encoded

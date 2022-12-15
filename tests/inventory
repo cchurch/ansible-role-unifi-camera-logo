@@ -1,0 +1,8 @@
+[unifi_cameras]
+test-unifi-camera ansible_host=192.168.1.99
+
+[unifi_cameras:vars]
+ansible_user=ubnt
+ansible_password=DevicePasswordFromUnifiProtect
+
+ansible_scp_if_ssh=true

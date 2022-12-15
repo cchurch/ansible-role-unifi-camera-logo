@@ -1,0 +1,7 @@
+---
+
+- name: Save persistent storage
+  ansible.builtin.raw: cfgmtd -w -p /etc/
+
+- name: Restart ubnt_osd
+  ansible.builtin.raw: killall ubnt_osd

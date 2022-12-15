@@ -1,0 +1,87 @@
+---
+
+# Based on: https://community.ubnt.com/t5/UniFi-Video-Feature-Requests/UVC-Watermark/idc-p/1525211#M1488
+
+- name: Update custom logo file
+  when: unifi_camera_logo_use_custom | bool
+  block:
+
+    - name: Get md5 of source logo file
+      ansible.builtin.set_fact:
+        _unifi_camera_logo_src_md5: "{{ lookup('file', unifi_camera_logo_file) | md5 }}"
+
+    - name: Get md5 of remote logo file
+      ansible.builtin.raw: >
+        test -f {{ unifi_camera_logo_dest_path | quote }} &&
+        md5sum {{ unifi_camera_logo_dest_path | quote }} ||
+        echo '0'
+      changed_when: false
+      register: _unifi_camera_logo_dest_md5
+
+    - name: Set flag if logo needs updated
+      ansible.builtin.set_fact:
+        _unifi_camera_logo_needs_update: >
+          {{ (_unifi_camera_logo_src_md5 != _unifi_camera_logo_dest_md5.stdout.split()[0]) | bool }}
+
+    - name: Generate local temp filename for logo update script
+      ansible.builtin.tempfile:
+        prefix: update_unifi_camera_logo_
+        suffix: .sh
+        state: file
+      register: _unifi_camera_logo_script
+      delegate_to: localhost
+      when: _unifi_camera_logo_needs_update | bool
+
+    - name: Generate local script containing user logo
+      ansible.builtin.template:
+        src: update_unifi_camera_logo.sh.j2
+        dest: "{{ _unifi_camera_logo_script.path }}"
+        mode: 0755
+      delegate_to: localhost
+      when: _unifi_camera_logo_needs_update | bool
+
+    - name: Run script to update user logo
+      ansible.builtin.script: "{{ _unifi_camera_logo_script.path }}"
+      when: _unifi_camera_logo_needs_update | bool
+      notify:
+        - Save persistent storage
+        - Restart ubnt_osd
+
+  always:
+
+    - name: Cleanup temp script file
+      ansible.builtin.file:
+        path: "{{ _unifi_camera_logo_script.path }}"
+        state: absent
+      delegate_to: localhost
+      when: _unifi_camera_logo_script.path | default(false)
+
+- name: Read current ubnt_osd settings
+  ansible.builtin.raw: >
+    ubnt_ipc_cli -T=ubnt_osd -r=1 -z
+    -m='{"functionName":"ChangeOsdSettings"}'
+  changed_when: false
+  register: _ubnt_osd_settings
+
+- name: Extract current ubnt_osd logo settings
+  ansible.builtin.set_fact:
+    _ubnt_osd_use_custom_logo: "{{ (_ubnt_osd_settings.stdout | from_json)['response']['payload']['useCustomLogo'] | bool }}"
+    _ubnt_osd_logo_scale: "{{ (_ubnt_osd_settings.stdout | from_json)['response']['payload']['logoScale'] | int }}"
+
+- name: Enable/disable use of custom logo
+  ansible.builtin.raw: >
+    ubnt_ipc_cli -T=ubnt_osd -r=1 -s
+    -m='{"functionName":"ChangeOsdSettings", "useCustomLogo":{{ unifi_camera_logo_use_custom | bool | ternary(1, 0) }}}'
+  when: (_ubnt_osd_use_custom_logo | bool) != (unifi_camera_logo_use_custom | bool)
+  notify:
+    - Save persistent storage
+    - Restart ubnt_osd
+
+- name: Update logo scale
+  ansible.builtin.raw: >
+    ubnt_ipc_cli -T=ubnt_osd -r=1 -s
+    -m='{"functionName":"ChangeOsdSettings", "logoScale":{{ unifi_camera_logo_scale }}}'
+  when: (_ubnt_osd_logo_scale | int) != (unifi_camera_logo_scale | int)
+  notify:
+    - Save persistent storage
+    - Restart ubnt_osd

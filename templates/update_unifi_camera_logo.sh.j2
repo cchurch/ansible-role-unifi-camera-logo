@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e 
+
+echo {{ lookup('file', unifi_camera_logo_file) | b64encode | wordwrap(76) | quote }} > {{ unifi_camera_logo_tmp_path | quote }}
+
+openssl enc -d -base64 -in {{ unifi_camera_logo_tmp_path | quote }} -out {{ unifi_camera_logo_dest_path | quote }}
+
+rm -f {{ unifi_camera_logo_tmp_path | quote }}

@@ -1,0 +1,27 @@
+---
+
+- name: Update unifi camera logo
+  hosts: unifi_cameras
+  gather_facts: false
+  tags: [custom_logo]
+  roles:
+  - role: cchurch.unifi_camera_logo
+
+- name: Change custom logo and scale
+  hosts: unifi_cameras
+  gather_facts: false
+  tags: [change_logo]
+  roles:
+  - role: cchurch.unifi_camera_logo
+    vars:
+      unifi_camera_logo_file: test_unifi_camera_logo.png
+      unifi_camera_logo_scale: 100
+
+- name: Disable use of custom logo
+  hosts: unifi_cameras
+  gather_facts: false
+  tags: [default_logo]
+  roles:
+    - role: cchurch.unifi_camera_logo
+      vars:
+        unifi_camera_logo_use_custom: false
